@@ -6,9 +6,14 @@ public class InfiniteGround : MonoBehaviour {
 
     ///Deactiavate ground yg tidak terlihat > pindahkan posisi-nya > activate lagi
     
+    [Tooltip("Pivot for the ground to follow")] 
     public Transform target;
+
     [SerializeField] Transform groundPrefab;
-    [SerializeField] Vector3 groundSize = new Vector3(1f, 0f, 1f);
+
+    [SerializeField, Tooltip("Ground size in world scale")] 
+    Vector3 groundSize = new Vector3(1f, 0f, 1f);
+
 
     readonly List<Transform> spawnedGround = new List<Transform>();
 
