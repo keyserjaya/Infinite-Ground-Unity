@@ -1,2 +1,2 @@
-# Infinity-Ground
-Infinity Ground / Endless Ground / Pooling Ground
+# Infinite-Ground
+Infinite Ground / Endless Ground / Pooling Ground
