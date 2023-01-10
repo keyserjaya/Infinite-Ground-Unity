@@ -6,67 +6,78 @@ public class InfiniteGround : MonoBehaviour {
 
     ///Deactiavate ground yg tidak terlihat > pindahkan posisi-nya > activate lagi
     
-    [Tooltip("Pivot for the ground to follow")] 
-    public Transform target;
+    #region Member Variables
 
-    [SerializeField] Transform groundPrefab;
+        [SerializeField] private Transform target;
+        [SerializeField] private Transform groundPrefab;
+        [SerializeField] private float     groundDimension = 3;
+        [SerializeField] [Tooltip("Ground piece size in world scale")]
+        private Vector3 groundPieceSize = new(1f, 0f, 1f);
 
-    [SerializeField, Tooltip("Ground size in world scale")] 
-    Vector3 groundSize = new Vector3(1f, 0f, 1f);
+        private readonly List<Transform> _spawnedGround = new();
+
+        private Vector3 _groundOffset;
+        private Vector3 _groundOffsetSizeHalf;
+        private Vector3 _newGroundTrigger;
+        private Vector3 _targetLastPosition;
+
+    #endregion
+
+        private void Start()
+        {
+            if (this.target == null) Debug.LogException(new Exception($"Ground Spawner ---- target on {this.gameObject.name} is NULL!"));
+
+            Initialize();
+        }
+
+        private void Update()
+        {
+            if (this.target.position != this._targetLastPosition) FixOutsideRange(); // with this if statement the FixOutSideRange method is not going to be called every frame when the target is standing still.
+        }
 
 
-    readonly List<Transform> spawnedGround = new List<Transform>();
+        private void Initialize()
+        {
+            this._groundOffset         = this.groundPieceSize * this.groundDimension;
+            this._groundOffsetSizeHalf = this._groundOffset   * 0.5f;
+            this._newGroundTrigger     = this.groundPieceSize + this._groundOffsetSizeHalf;
 
-    Vector3 groundOffset;
-    Vector3 groundSizeHalf;
-    Vector3 newGroundTrigger;
+            var groundDimensionHalf = Convert.ToInt32(Math.Floor(this.groundDimension / 2f));
+            for (var x = -groundDimensionHalf; x < groundDimensionHalf; x++)
+            {
+                for (var z = -groundDimensionHalf; z < groundDimensionHalf; z++)
+                    SpawnGround(new Vector3(x * this.groundPieceSize.x, 0, z * this.groundPieceSize.z));
+            }
 
-    private void Awake()
-    {
-        groundOffset = groundSize * 3f;
-        groundSizeHalf = groundSize * 0.5f;
-        newGroundTrigger = groundSize + groundSizeHalf;
-
-        for (int i = -1; i <= 1; i++) {
-            for (int j = -1; j <= 1; j++) {
-                SpawnGround(new Vector3(i * groundSize.x, 0, j * groundSize.z));
+            void SpawnGround(Vector3 pos)
+            {
+                var ground = Instantiate(this.groundPrefab, this.transform);
+                ground.transform.position = pos;
+                this._spawnedGround.Add(ground);
             }
         }
 
-        void SpawnGround(Vector3 pos) {
-            Transform obj = Instantiate(groundPrefab, transform);
-            obj.transform.position = pos;
-            spawnedGround.Add(obj);
-        }
-    }
+        private void FixOutsideRange()
+        {
+            this._targetLastPosition = this.target.position;
 
-    private void Update() {
-        FixOutsideRange();
-    }
+            foreach (var ground in this._spawnedGround)
+            {
+                var groundPosition = ground.position;
+                var magnitude      = this.target.position - groundPosition;
 
-    void FixOutsideRange() {
-        for (int i = 0; i < spawnedGround.Count; i++) {
-            Vector3 groundPos = spawnedGround[i].position;
-            Vector3 mag = target.position - groundPos;
-            if (mag.x < -newGroundTrigger.x) 
-            {
-                groundPos.x -= groundOffset.x;
-            } 
-            else if (mag.x > newGroundTrigger.x) 
-            {
-                groundPos.x += groundOffset.x;
+                if (magnitude.x < -this._newGroundTrigger.x)
+                    groundPosition.x -= this._groundOffset.x;
+                else if (magnitude.x > this._newGroundTrigger.x)
+                    groundPosition.x += this._groundOffset.x;
+
+                if (magnitude.z < -this._newGroundTrigger.z)
+                    groundPosition.z -= this._groundOffset.z;
+                else if (magnitude.z > this._newGroundTrigger.z)
+                    groundPosition.z += this._groundOffset.z;
+
+                ground.transform.position = groundPosition;
             }
-
-            if (mag.z < -newGroundTrigger.z)
-            {
-                groundPos.z -= groundOffset.z;
-            }
-            else if (mag.z > newGroundTrigger.z)
-            {
-                groundPos.z += groundOffset.z;
-            }
-
-            spawnedGround[i].transform.position = groundPos;
         }
     }
 }
