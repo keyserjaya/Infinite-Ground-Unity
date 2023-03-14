@@ -1,72 +1,90 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class InfiniteGround : MonoBehaviour {
+public class InfiniteGround : MonoBehaviour
+{
+    /// Deactiavate ground yg tidak terlihat > pindahkan posisi-nya > activate lagi
+    [SerializeField] private Transform target;
+    [SerializeField] private Transform groundPrefab;
+    [SerializeField] private float     groundDimension = 3;
 
-    ///Deactiavate ground yg tidak terlihat > pindahkan posisi-nya > activate lagi
-    
-    [Tooltip("Pivot for the ground to follow")] 
-    public Transform target;
+    private readonly List<Transform> _spawnedGround = new();
 
-    [SerializeField] Transform groundPrefab;
+    private Vector3 _groundOffset;
+    private Vector3 _groundOffsetSizeHalf;
+    private Vector3 _groundPieceSize;
+    private Vector3 _newGroundTrigger;
+    private Vector3 _targetLastPosition;
 
-    [SerializeField, Tooltip("Ground size in world scale")] 
-    Vector3 groundSize = new Vector3(1f, 0f, 1f);
-
-
-    readonly List<Transform> spawnedGround = new List<Transform>();
-
-    Vector3 groundOffset;
-    Vector3 groundSizeHalf;
-    Vector3 newGroundTrigger;
-
-    private void Awake()
+    private void Start()
     {
-        groundOffset = groundSize * 3f;
-        groundSizeHalf = groundSize * 0.5f;
-        newGroundTrigger = groundSize + groundSizeHalf;
+        if (this.target == null) Debug.LogException(new Exception($"Ground Spawner ---- target on {this.gameObject.name} is NULL!"));
 
-        for (int i = -1; i <= 1; i++) {
-            for (int j = -1; j <= 1; j++) {
-                SpawnGround(new Vector3(i * groundSize.x, 0, j * groundSize.z));
+        Initialize();
+    }
+
+    private void Update()
+    {
+        if (this.target.position != this._targetLastPosition)
+            FixOutsideRange(); // with this if statement the FixOutSideRange method is not going to be called every frame when the target is standing still.
+    }
+
+
+    private void Initialize()
+    {
+        this._groundPieceSize = this.groundPrefab.GetComponent<MeshRenderer>().bounds.size;
+
+        this._groundOffset         = this._groundPieceSize * this.groundDimension;
+        this._groundOffsetSizeHalf = this._groundOffset    * 0.5f;
+        this._newGroundTrigger     = this._groundPieceSize + this._groundOffsetSizeHalf;
+
+
+        var groundDimensionHalf = Mathf.RoundToInt(this.groundDimension / 2f);
+        Debug.Log(groundDimensionHalf);
+
+        if (this.groundDimension % 2 != 0)
+            for (var x = -groundDimensionHalf; x < groundDimensionHalf - 1; x++)
+            {
+                for (var z = -groundDimensionHalf; z < groundDimensionHalf - 1; z++)
+                    SpawnGround(new Vector3(x * this._groundPieceSize.x, 0, z * this._groundPieceSize.z));
             }
-        }
+        else
+            for (var x = -groundDimensionHalf; x < groundDimensionHalf; x++)
+            {
+                for (var z = -groundDimensionHalf; z < groundDimensionHalf; z++)
+                    SpawnGround(new Vector3(x * this._groundPieceSize.x, 0, z * this._groundPieceSize.z));
+            }
 
-        void SpawnGround(Vector3 pos) {
-            Transform obj = Instantiate(groundPrefab, transform);
-            obj.transform.position = pos;
-            spawnedGround.Add(obj);
+
+        void SpawnGround(Vector3 pos)
+        {
+            var ground = Instantiate(this.groundPrefab, this.transform);
+            ground.transform.position = pos;
+            this._spawnedGround.Add(ground);
         }
     }
 
-    private void Update() {
-        FixOutsideRange();
-    }
+    private void FixOutsideRange()
+    {
+        this._targetLastPosition = this.target.position;
 
-    void FixOutsideRange() {
-        for (int i = 0; i < spawnedGround.Count; i++) {
-            Vector3 groundPos = spawnedGround[i].position;
-            Vector3 mag = target.position - groundPos;
-            if (mag.x < -newGroundTrigger.x) 
-            {
-                groundPos.x -= groundOffset.x;
-            } 
-            else if (mag.x > newGroundTrigger.x) 
-            {
-                groundPos.x += groundOffset.x;
-            }
+        foreach (var ground in this._spawnedGround)
+        {
+            var groundPosition = ground.position;
+            var magnitude      = this.target.position - groundPosition;
 
-            if (mag.z < -newGroundTrigger.z)
-            {
-                groundPos.z -= groundOffset.z;
-            }
-            else if (mag.z > newGroundTrigger.z)
-            {
-                groundPos.z += groundOffset.z;
-            }
+            if (magnitude.x < -this._newGroundTrigger.x)
+                groundPosition.x -= this._groundOffset.x;
+            else if (magnitude.x > this._newGroundTrigger.x)
+                groundPosition.x += this._groundOffset.x;
 
-            spawnedGround[i].transform.position = groundPos;
+            if (magnitude.z < -this._newGroundTrigger.z)
+                groundPosition.z -= this._groundOffset.z;
+            else if (magnitude.z > this._newGroundTrigger.z)
+                groundPosition.z += this._groundOffset.z;
+
+            ground.transform.position = groundPosition;
         }
     }
 }
