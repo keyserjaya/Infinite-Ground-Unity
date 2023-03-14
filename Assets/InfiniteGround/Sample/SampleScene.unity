@@ -154,7 +154,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   target: {fileID: 1651576195}
   groundPrefab: {fileID: 5551183546003154298, guid: 42c7fb2f70f4bcb418251047a8e4f57f, type: 3}
-  groundSize: {x: 50, y: 0, z: 50}
+  groundDimension: 6
 --- !u!4 &593321354
 Transform:
   m_ObjectHideFlags: 0
@@ -380,7 +380,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 657eb99f42d78f34c9518f7276ce9f36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
+  speed: 20
 --- !u!136 &1651576192
 CapsuleCollider:
   m_ObjectHideFlags: 0
